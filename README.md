@@ -1,6 +1,6 @@
 # twitter-archive-unshorten
 
-This is a small Python3 program for converting the t.co short URLs in your archive download back to the original full URL.
+This is a small Python3 program for converting the `t.co` short URLs in your Twitter archive download back to the original full URL.
 
 1. Unzip your archive
 2. Move `unshorten.py` into the archive directory that was created.
