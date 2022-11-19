@@ -16,24 +16,35 @@ import time
 import urllib.error
 import urllib.request
 
-def main():
-    sanity_check()
-    short_urls = get_short_urls()
-    url_map = unshorten(short_urls)
-    rewrite_files(url_map)
+from os.path import join
 
-def sanity_check():
-    if not os.path.isfile('Your archive.html') or \
-            not os.path.isdir('assets') or \
-            not os.path.isdir('data'):
+def main():
+
+    # get the twitter archive directory
+    if len(sys.argv) != 2:
+        sys.exit("usage: unshorten.py <twitter-archive-dir>")
+
+    archive_dir = sys.argv[1]
+    sanity_check(archive_dir)
+
+    short_urls = get_short_urls(archive_dir)
+
+    url_map = unshorten(short_urls)
+
+    rewrite_files(archive_dir, url_map)
+
+def sanity_check(archive_dir):
+    if not os.path.isfile(join(archive_dir, 'Your archive.html')) or \
+            not os.path.isdir(join(archive_dir, 'assets')) or \
+            not os.path.isdir(join(archive_dir, 'data')):
         sys.exit("You aren't running from a Twitter archive directory!")
 
-def get_short_urls():
+def get_short_urls(archive_dir):
     """
     Gets all the t.co URLs in the archive.
     """
     urls = []
-    for path in get_files():
+    for path in get_js_files(archive_dir):
         text = open(path).read()
         urls.extend(short_urls_in_text(text))
     return urls
@@ -43,19 +54,19 @@ def short_urls_in_text(s):
     """
     return re.findall(r'https://t.co/[a-zA-Z0-9]+', s)
 
-def get_files():
+def get_js_files(archive_dir):
     """Get the files in the archive that need to be rewritten.
     """
-    for root_dir, _, files in os.walk('.'):
+    for root_dir, _, files in os.walk(archive_dir):
         for filename in files:
             ext = os.path.splitext(filename)[1]
             if ext == ".js":
                 yield(os.path.join(root_dir, filename))
 
-def rewrite_files(url_map):
+def rewrite_files(archive_dir, url_map):
     """Rewrite all the .js archive files using the URL mapping.
     """
-    for path in get_files():
+    for path in get_js_files(archive_dir):
         text = open(path).read()
         for short_url in short_urls_in_text(text):
             if short_url in url_map:
