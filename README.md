@@ -1,6 +1,6 @@
 # twitter-archive-unshorten
 
-Twitter's archive includes shortened URLs instead of the original. This is kind of a problem if Twitter ever goes away.
+Twitter's [archive download](https://help.twitter.com/en/managing-your-account/how-to-download-your-twitter-archive) includes shortened URLs instead of the original. This is kind of a problem if Twitter ever goes away.
 
 `unshorten.py` is a small Python3 program for converting all the `t.co` short URLs in your Twitter archive download back to the original full URL. That way you can see what you were originally referring to when Twitter is no more.
 
