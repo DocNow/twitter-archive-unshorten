@@ -42,7 +42,7 @@ def sanity_check(archive_dir):
     if not os.path.isfile(join(archive_dir, 'Your archive.html')) or \
             not os.path.isdir(join(archive_dir, 'assets')) or \
             not os.path.isdir(join(archive_dir, 'data')):
-        sys.exit("You aren't running from a Twitter archive directory!")
+        sys.exit("🆘 {archive_dir} isn't a Twitter archive directory!")
 
     print("The t.co URLs in your Twitter archive data will be overwritten.")
     print()

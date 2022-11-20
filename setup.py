@@ -1,6 +1,6 @@
 from setuptools import setup
 
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
 def long_description():
     with open("README.md") as f:
@@ -21,6 +21,6 @@ setup(
     zip_safe=True,
     entry_points="""
         [console_scripts]
-        twitter_archive_unshorten = twitter_archive_unshorten:main
+        twitter-archive-unshorten = twitter_archive_unshorten:main
     """,
 )
