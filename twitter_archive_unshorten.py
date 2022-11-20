@@ -177,7 +177,7 @@ def read_url_map(path):
     """Read short/long mapping in existing data.
     """
     text = open(path, encoding="utf8").read()
-    text = re.sub(r'^window.YTD.tweet.part0 = ', '', text)
+    text = re.sub(r'^window.YTD.tweets?.part0 = ', '', text)
     data = json.loads(text)
     url_map = {}
     for tweet in data:
