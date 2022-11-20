@@ -2,10 +2,12 @@
 
 """
 
-Run this program in the an unpacked Twitter Archive directory and it will
+usage: unshorten.py /path/to/your/twitter/archive/directory
+
+Run this program on an unpacked Twitter Archive directory and it will
 rewrite the t.co short URLs to their unshortened equivalent.
 
-*** MAKE A BACKUP TO KEEP THE ORIGINAL TOO! ***
+MAKE A BACKUP TO KEEP THE ORIGINAL TOO!
 
 """
 
@@ -31,19 +33,23 @@ def main():
     short_urls = get_short_urls(archive_dir)
 
     # unshorten them
-    url_map = unshorten(short_urls)
+    url_map = unshorten(short_urls, archive_dir)
 
     # rewrite the files using the short url mapping
     rewrite_files(archive_dir, url_map)
-
-    # keep the mapping around just in case
-    json.dump(url_map, open(join(archive_dir, 'data', 'shorturls.json'), 'w'), indent=2)
 
 def sanity_check(archive_dir):
     if not os.path.isfile(join(archive_dir, 'Your archive.html')) or \
             not os.path.isdir(join(archive_dir, 'assets')) or \
             not os.path.isdir(join(archive_dir, 'data')):
         sys.exit("You aren't running from a Twitter archive directory!")
+
+    print("The t.co URLs in your Twitter archive data will be overwritten.")
+    print()
+    answer = input("Do you have a backup? Y/N ")
+    if answer.upper() != "Y":
+        sys.exit("🆘 please go make a backup first!")
+
 
 def get_short_urls(archive_dir):
     """
@@ -59,9 +65,9 @@ def short_urls_in_text(s):
     """Get the t.co URLs in a string.
     """
     # It's important to sort these since not all t.co URLs are 23 characters long and
-    # the length matters when we are replacing. We wouldn't want to accidentally
-    # overwrite part of another URL, but if we do them in order of their length
-    # (longest first) that won't happen
+    # the length matters when we are replacing. We don't want to accidentally
+    # overwrite part of another URL with a shorter one. If they are done in
+    # order of their length that won't happen.
     urls = re.findall(r'https?://t.co/[a-zA-Z0-9…]+', s)
     urls = filter(lambda url: not url.endswith('…'), urls)
     return sorted(urls, key=len, reverse=True)
@@ -79,28 +85,46 @@ def rewrite_files(archive_dir, url_map):
     """Rewrite all the .js archive files using the URL mapping.
     """
     for path in get_js_files(archive_dir):
-        # using a list of strings and rewriting line by line is more efficent
+
+        # rewriting line by line is more efficent
         lines = []
-        rewrote = False
+        rewrote = 0
         for line in open(path):
             for short_url in short_urls_in_text(line):
-                rewrote = True
-                # remember the mapping contains https keys
-                short_url = re.sub(r'^http://', 'https://', short_url)
-                line = line.replace(short_url, url_map[short_url])
+                # remember the mapping only contains https keys
+                lookup_url = re.sub(r'^http://', 'https://', short_url)
+                if lookup_url in url_map:
+                    rewrote += 1 
+                    line = line.replace(short_url, url_map[lookup_url])
+                else:
+                    print(f"{lookup_url} not found")
             lines.append(line)
-        if rewrote:
-            print("rewrote %s" % path)
+
         open(path, "w").write(''.join(lines))
 
-def unshorten(urls):
+        if rewrote > 0:
+            print(f"rewrote {rewrote} urls in {path}")
+
+def unshorten(urls, archive_dir):
     """Unshorten a list of URLs and return a dictionary of the short/long URLs.
+    Also save a copy of the mapping as we go in data/unshorten.json.
     """
     # make the urls unique
     urls = set(urls)
 
-    url_map = {}
+    # where to write the mapping
+    url_map_file = join(archive_dir, "data", "urlmap.json")
+
+    # load any mapping data we have already
+    if os.path.isfile(url_map_file):
+        url_map = json.load(open(url_map_file))
+    else:
+        url_map = {}
+
+    count = 0
     for short_url in urls:
+        count += 1
+
         # force https: some old t.co URLs use http
         short_url = re.sub(r'^http://', 'https://', short_url)
         try:
@@ -108,17 +132,22 @@ def unshorten(urls):
         except urllib.error.HTTPError as e:
             if e.code == 301:
                 long_url = e.headers.get('Location')
-                # ensure that the url doesn't have unescaped " in it, which will break JSON serialization
+                # an unescaped " will break JSON serialization
                 long_url = long_url.replace('"', '%22')
                 url_map[short_url] = long_url
 
-        # print some diagnostics, gonna take a while potentially
-        msg = 'unshortening urls: %s / %s' % (len(url_map), len(urls))
+        # print some diagnostics since this could take a while
+        msg = f"unshortening urls: {count} / {len(urls)}"
         print('\r' + msg, end='', flush=True)
 
-        # try not to awaken the beast
+        # periodically dump the mappings we have
+        if len(url_map) % 10 == 0:
+            json.dump(url_map, open(url_map_file, "w"), indent=2)
+
+        # try not to awaken the dragon
         time.sleep(.5)
 
+    print()
     return url_map
 
 # Some shenanigans so urllib gets the redirect but doesn't follow it.
