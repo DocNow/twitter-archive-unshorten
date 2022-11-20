@@ -126,8 +126,13 @@ def unshorten(urls, archive_dir):
     else:
         url_map = {}
 
-    # load short/long mapping already present in tweet.js
-    url_map.update(read_url_map(join(archive_dir, "data", "tweet.js")))
+    # load short/long mapping already present in tweet.js or tweets.js
+    tweet_js = join(archive_dir, "data", "tweet.js")
+    if not os.path.isfile(tweet_js):
+        tweet_js = join(archive_dir, "data", "tweets.js")
+
+    if os.path.isfile(tweet_js):
+        url_map.update(read_url_map(tweet_js))
 
     count = 0
     for short_url in urls:
