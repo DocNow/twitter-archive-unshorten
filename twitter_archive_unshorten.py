@@ -61,7 +61,7 @@ def get_short_urls(archive_dir):
     """
     urls = []
     for path in get_js_files(archive_dir):
-        text = open(path).read()
+        text = open(path, encoding="utf8").read()
         urls.extend(short_urls_in_text(text))
     return urls
 
@@ -93,7 +93,7 @@ def rewrite_files(archive_dir, url_map):
         # rewriting line by line is more efficent
         lines = []
         rewrote = 0
-        for line in open(path):
+        for line in open(path, encoding="utf8"):
             for short_url in short_urls_in_text(line):
                 # remember the mapping only contains https keys
                 lookup_url = re.sub(r'^http://', 'https://', short_url)
@@ -105,7 +105,7 @@ def rewrite_files(archive_dir, url_map):
                     print(f"{lookup_url} not found")
             lines.append(line)
 
-        open(path, "w").write(''.join(lines))
+        open(path, "w", encoding="utf8").write(''.join(lines))
 
         if rewrote > 0:
             print(f"rewrote {rewrote} urls in {path}")
@@ -122,7 +122,7 @@ def unshorten(urls, archive_dir):
 
     # load any existing mapping data (from a previous run perhaps)
     if os.path.isfile(url_map_file):
-        url_map = json.load(open(url_map_file))
+        url_map = json.load(open(url_map_file, encoding="utf8"))
     else:
         url_map = {}
 
@@ -160,7 +160,7 @@ def unshorten(urls, archive_dir):
         # periodically dump the mappings we have
         if archive_dir != "" and len(url_map) % 10 == 0:
             logging.info(f"writing {len(url_map)} urls to {url_map_file}")
-            json.dump(url_map, open(url_map_file, "w"), indent=2)
+            json.dump(url_map, open(url_map_file, "w", encoding="utf8"), indent=2)
 
         # try not to awaken the dragon
         time.sleep(.5)
@@ -171,7 +171,7 @@ def unshorten(urls, archive_dir):
 def read_url_map(path):
     """Read short/long mapping in existing data.
     """
-    text = open(path).read()
+    text = open(path, encoding="utf8").read()
     text = re.sub(r'^window.YTD.tweet.part0 = ', '', text)
     data = json.loads(text)
     url_map = {}
