@@ -16,7 +16,7 @@ $ pip3 install twitter-archive-unshorten
 3. Open a terminal window and run: `twitter-archive-unshorten /path/to/your/archive/directory/`
 
 It might take a while, depending on how many tweets you have. Once it's
-finished you should be able open your Archive and interact with it without the
+finished you should be able open your archive and interact with it without the
 `t.co` URLs.
 
 The mapping of short URLs to long URLs that was used is saved in your archive directory as
