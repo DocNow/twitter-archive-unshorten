@@ -21,3 +21,12 @@ finished you should be able open your Archive and interact with it without the
 
 The mapping of short URLs to long URLs that was used is saved in your archive directory as
 `data/shorturls.json`.
+
+## Test
+
+If you'd like to develop further you can run the existing tests:
+
+```
+$ pip3 install pytest
+$ pytest test.py
+```
