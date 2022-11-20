@@ -16,6 +16,7 @@ import os
 import sys
 import json
 import time
+import logging
 import urllib.error
 import urllib.request
 
@@ -28,6 +29,9 @@ def main():
         sys.exit("usage: unshorten.py <twitter-archive-dir>")
     archive_dir = sys.argv[1]
     sanity_check(archive_dir)
+
+    logging.basicConfig(filename=join(archive_dir, "twitter-archive-unshorten.log"), level=logging.INFO)
+    logging.info("rewriting t.co urls with https://github.com/docnow/twitter-archive-unshorten")
 
     # find all the short urls in the archive
     short_urls = get_short_urls(archive_dir)
@@ -94,8 +98,9 @@ def rewrite_files(archive_dir, url_map):
                 # remember the mapping only contains https keys
                 lookup_url = re.sub(r'^http://', 'https://', short_url)
                 if lookup_url in url_map:
-                    rewrote += 1 
+                    logging.info("rewriting {short_url} to {long_url} in {path}")
                     line = line.replace(short_url, url_map[lookup_url])
+                    rewrote += 1 
                 else:
                     print(f"{lookup_url} not found")
             lines.append(line)
@@ -133,13 +138,17 @@ def unshorten(urls, archive_dir):
 
         # if we already know what the long url is we can skip it
         if short_url in url_map:
+            logging.info(f"already have long url for {short_url}")
             continue
+
+        logging.info(f"looking up {short_url}")
 
         try:
             urllib.request.urlopen(short_url)
         except urllib.error.HTTPError as e:
             if e.code == 301:
                 long_url = e.headers.get('Location')
+                logging.info(f"got {long_url} for {short_url}")
                 # an unescaped " will break JSON serialization
                 long_url = long_url.replace('"', '%22')
                 url_map[short_url] = long_url
@@ -150,6 +159,7 @@ def unshorten(urls, archive_dir):
 
         # periodically dump the mappings we have
         if archive_dir != "" and len(url_map) % 10 == 0:
+            logging.info(f"writing {len(url_map)} urls to {url_map_file}")
             json.dump(url_map, open(url_map_file, "w"), indent=2)
 
         # try not to awaken the dragon
@@ -166,16 +176,20 @@ def read_url_map(path):
     data = json.loads(text)
     url_map = {}
     for tweet in data:
+        entities = tweet['tweet']['entities']['urls']
+        entities.extend(tweet['tweet']['entities'].get('media', []))
         for url in tweet['tweet']['entities']['urls']:
-            short_url = url['url']
-            short_url = re.sub(r'^http://', 'https://', short_url)
+            short_url = re.sub(r'^http://', 'https://', url['url'])
             if short_url.startswith('https://t.co/'):
                 url_map[short_url] = url['expanded_url']
+            
     return url_map
 
 # Some shenanigans so urllib gets the redirect but doesn't follow it.
 # It would be nice to be able to use requests here but I didn't want to
 # make people install anything extra.
+#
+# It might be worth revisiting this since it is pip installed now.
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, *_):

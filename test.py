@@ -6,7 +6,7 @@ if os.path.isfile("test-data/data/shorturls.json"):
 
 def test_read_mapping():
     url_map = twitter_archive_unshorten.read_url_map('test-data/data/tweet.js')
-    assert len(url_map) == 42
+    assert len(url_map) == 45
 
 def test_unshorten():
     urls = [
