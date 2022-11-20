@@ -1,4 +1,4 @@
-# twitter-archive-unshorten
+# twitter-archive-unshorten (still in development)
 
 Twitter's [archive download](https://help.twitter.com/en/managing-your-account/how-to-download-your-twitter-archive) includes shortened `t.co` URLs instead of the original URLs that you tweeted. This is kind of a problem if Twitter ever goes away, because the server at `t.co` won't be available to respond to requests. Somewhat oddly the archive download itself contains some of these expanded URLs but not in a uniform way, and the user interface doesn't seem to use them.
 
