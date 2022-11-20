@@ -2,7 +2,7 @@
 
 """
 
-usage: unshorten.py /path/to/your/twitter/archive/directory
+usage: twitter-archive-unshorten.py /path/to/your/twitter/archive/directory
 
 Run this program on an unpacked Twitter Archive directory and it will
 rewrite the t.co short URLs to their unshortened equivalent.
@@ -113,13 +113,16 @@ def unshorten(urls, archive_dir):
     urls = set(urls)
 
     # where to write the mapping
-    url_map_file = join(archive_dir, "data", "urlmap.json")
+    url_map_file = join(archive_dir, "data", "shorturls.json")
 
-    # load any mapping data we have already
+    # load any existing mapping data (from a previous run perhaps)
     if os.path.isfile(url_map_file):
         url_map = json.load(open(url_map_file))
     else:
         url_map = {}
+
+    # load short/long mapping already present in tweet.js
+    url_map.update(read_url_map(join(archive_dir, "data", "tweet.js")))
 
     count = 0
     for short_url in urls:
@@ -127,6 +130,11 @@ def unshorten(urls, archive_dir):
 
         # force https: some old t.co URLs use http
         short_url = re.sub(r'^http://', 'https://', short_url)
+
+        # if we already know what the long url is we can skip it
+        if short_url in url_map:
+            continue
+
         try:
             urllib.request.urlopen(short_url)
         except urllib.error.HTTPError as e:
@@ -141,13 +149,28 @@ def unshorten(urls, archive_dir):
         print('\r' + msg, end='', flush=True)
 
         # periodically dump the mappings we have
-        if len(url_map) % 10 == 0:
+        if archive_dir != "" and len(url_map) % 10 == 0:
             json.dump(url_map, open(url_map_file, "w"), indent=2)
 
         # try not to awaken the dragon
         time.sleep(.5)
 
     print()
+    return url_map
+
+def read_url_map(path):
+    """Read short/long mapping in existing data.
+    """
+    text = open(path).read()
+    text = re.sub(r'^window.YTD.tweet.part0 = ', '', text)
+    data = json.loads(text)
+    url_map = {}
+    for tweet in data:
+        for url in tweet['tweet']['entities']['urls']:
+            short_url = url['url']
+            short_url = re.sub(r'^http://', 'https://', short_url)
+            if short_url.startswith('https://t.co/'):
+                url_map[short_url] = url['expanded_url']
     return url_map
 
 # Some shenanigans so urllib gets the redirect but doesn't follow it.
