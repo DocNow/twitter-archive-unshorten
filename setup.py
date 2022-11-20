@@ -1,6 +1,6 @@
 from setuptools import setup
 
-__version__ = "0.0.5"
+__version__ = "0.0.6"
 
 def long_description():
     with open("README.md") as f:
@@ -13,7 +13,7 @@ setup(
     author_email="ehs@pobox.com",
     license="MIT",
     py_modules=["twitter_archive_unshorten"],
-    url="https://github.com/docnow/twitter_archive_unshorten",
+    url="https://github.com/docnow/twitter-archive-unshorten",
     description="Unshorten the URLs in your Twitter archive",
     long_description=long_description(),
     long_description_content_type="text/markdown",
