@@ -23,13 +23,13 @@ import urllib.request
 from os.path import join
 
 def main():
-
     # get the twitter archive directory
     if len(sys.argv) != 2:
         sys.exit("usage: unshorten.py <twitter-archive-dir>")
     archive_dir = sys.argv[1]
     sanity_check(archive_dir)
 
+    # log to a file in the twitter archive
     logging.basicConfig(filename=join(archive_dir, "twitter-archive-unshorten.log"), level=logging.INFO)
     logging.info("rewriting t.co urls with https://github.com/docnow/twitter-archive-unshorten")
 
@@ -43,6 +43,8 @@ def main():
     rewrite_files(archive_dir, url_map)
 
 def sanity_check(archive_dir):
+    """Make sure we are working with a Twitter archive.
+    """
     if not os.path.isfile(join(archive_dir, 'Your archive.html')) or \
             not os.path.isdir(join(archive_dir, 'assets')) or \
             not os.path.isdir(join(archive_dir, 'data')):
@@ -56,8 +58,7 @@ def sanity_check(archive_dir):
 
 
 def get_short_urls(archive_dir):
-    """
-    Gets all the t.co URLs in the archive.
+    """Get all the t.co URLs in the archive.
     """
     urls = []
     for path in get_js_files(archive_dir):
@@ -68,16 +69,17 @@ def get_short_urls(archive_dir):
 def short_urls_in_text(s):
     """Get the t.co URLs in a string.
     """
-    # It's important to sort these since not all t.co URLs are 23 characters long and
-    # the length matters when we are replacing. We don't want to accidentally
-    # overwrite part of another URL with a shorter one. If they are done in
-    # order of their length that won't happen.
+    # It's important to sort these since not all t.co URLs are 23 characters 
+    # long and the length matters when we are replacing. We don't want to 
+    # accidentally overwrite part of another URL with a shorter one. If they 
+    # are done in order of their length that won't happen.
     urls = re.findall(r'https?://t.co/[a-zA-Z0-9…]+', s)
+    # remove abbreviated short URLs
     urls = filter(lambda url: not url.endswith('…'), urls)
     return sorted(urls, key=len, reverse=True)
 
 def get_js_files(archive_dir):
-    """Get the files in the archive that need to be rewritten.
+    """Get the JavaScript files in the archive that need to be rewritten.
     """
     for root_dir, _, files in os.walk(archive_dir):
         for filename in files:
@@ -90,7 +92,7 @@ def rewrite_files(archive_dir, url_map):
     """
     for path in get_js_files(archive_dir):
 
-        # rewriting line by line is more efficent
+        # rewriting line by line is more efficient
         lines = []
         rewrote = 0
         for line in open(path, encoding="utf8"):
